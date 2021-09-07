@@ -24,6 +24,10 @@ class MapsActivity : AppCompatActivity(),
     private lateinit var map: GoogleMap
     private lateinit var binding: ActivityMapsBinding
 
+    companion object{
+        private const val LOCATION_PERMISSION_REQUEST_CODE  = 1
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -53,7 +57,7 @@ class MapsActivity : AppCompatActivity(),
 
         val myPlace = LatLng(40.73, -74.0)
         map.addMarker(MarkerOptions().position(myPlace).title("Marker in Sydney"))
-        map.moveCamera(CameraUpdateFactory.newLatLng(myPlace))
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(myPlace,12.0f))
         //zoom no mapa
         map.getUiSettings().setZoomControlsEnabled(true)
         //abre uma janelinha do lado do zoom in e zomm out

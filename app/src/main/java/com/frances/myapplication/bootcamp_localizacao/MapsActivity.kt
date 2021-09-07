@@ -1,7 +1,11 @@
 package com.frances.myapplication.bootcamp_localizacao
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.location.Location
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.core.app.ActivityCompat
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -23,6 +27,7 @@ class MapsActivity : AppCompatActivity(),
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var map: GoogleMap
     private lateinit var binding: ActivityMapsBinding
+    private lateinit var lastLocation : Location
 
     companion object{
         private const val LOCATION_PERMISSION_REQUEST_CODE  = 1
@@ -55,15 +60,64 @@ class MapsActivity : AppCompatActivity(),
         map = googleMap
 
 
-        val myPlace = LatLng(40.73, -74.0)
-        map.addMarker(MarkerOptions().position(myPlace).title("Marker in Sydney"))
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(myPlace,12.0f))
+
         //zoom no mapa
         map.getUiSettings().setZoomControlsEnabled(true)
         //abre uma janelinha do lado do zoom in e zomm out
         //para poder definir uma rota ou abrir google maps
         map.setOnMarkerClickListener(this)
+
+        setUpMap()
     }
 
     override fun onMarkerClick(p0: Marker?) =false
+
+
+
+
+    private fun setUpMap(){
+        //pergunta se tem acesso a localizacao
+        if (ActivityCompat.checkSelfPermission(this,
+                android.Manifest.permission.ACCESS_FINE_LOCATION)
+            !=PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(this,
+                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
+
+            return
+
+        }
+        //habilita minha localizacao
+        map.isMyLocationEnabled = true
+        // verifica se acho ultima localizacao
+        fusedLocationClient.lastLocation.addOnSuccessListener(this) { location ->
+
+            if (location != null) {
+
+                lastLocation = location
+                //aqui pega localizacao
+                val currentLatLng = LatLng(location.latitude, location.longitude)
+                //aqui direciona para a localizacao desejada
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 12f))
+
+            }
+
+        }
+
+
+
+
+    }
+
+
+
+
+
+
 }
+
+
+
+
+
+
+

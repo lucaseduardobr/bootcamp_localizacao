@@ -2,6 +2,10 @@ package com.frances.myapplication.bootcamp_localizacao
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.location.Address
+import android.location.Geocoder
 import android.location.Location
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -16,7 +20,9 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.frances.myapplication.bootcamp_localizacao.databinding.ActivityMapsBinding
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.Marker
+import java.util.*
 
 class MapsActivity : AppCompatActivity(),
     OnMapReadyCallback,
@@ -88,6 +94,10 @@ class MapsActivity : AppCompatActivity(),
         }
         //habilita minha localizacao
         map.isMyLocationEnabled = true
+        //tipo de mapa (imagem de satelite por ex)
+        map.mapType = GoogleMap.MAP_TYPE_HYBRID
+        
+        
         // verifica se acho ultima localizacao
         fusedLocationClient.lastLocation.addOnSuccessListener(this) { location ->
 
@@ -110,8 +120,46 @@ class MapsActivity : AppCompatActivity(),
     //no googlz maps
     private fun placeMarkerOnMap (location: LatLng) {
         val markerOptions = MarkerOptions() .position (location)
+        markerOptions.icon(BitmapDescriptorFactory.fromBitmap(
+            BitmapFactory.decodeResource(resources,R.mipmap.ic_user_location
+            )))
+        val titleStr = getAddress(location)
+        markerOptions.title(titleStr)
+
         map.addMarker (markerOptions)
     }
+    //para dizer o endereço , estado que o cara esta
+    private fun getAddress (latLng: LatLng): String {
+
+        val geocoder: Geocoder
+
+        val addresses: List<Address>
+
+        geocoder = Geocoder(  this, Locale.getDefault())
+
+        //maxResults significa que vai pegar o primeiro
+        // nome de endereco
+        //mas ele pode retornar cidade
+        //estado...
+        addresses = geocoder.getFromLocation (latLng. latitude, latLng.longitude,  1)
+
+        val address = addresses [0].getAddressLine( 0)
+
+        val city = addresses [0].locality
+
+        val state = addresses [0].adminArea
+
+        val country = addresses [0].countryName
+
+        val postalCode = addresses [0].postalCode
+
+        return address
+
+    }
+
+
+
+
 
 
 

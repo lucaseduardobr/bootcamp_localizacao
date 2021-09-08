@@ -1,6 +1,7 @@
 package com.frances.myapplication.bootcamp_localizacao
 
 import android.Manifest
+import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -18,8 +19,8 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.frances.myapplication.bootcamp_localizacao.databinding.ActivityMapsBinding
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
+import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.*
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.Marker
 import java.util.*
@@ -34,9 +35,14 @@ class MapsActivity : AppCompatActivity(),
     private lateinit var map: GoogleMap
     private lateinit var binding: ActivityMapsBinding
     private lateinit var lastLocation : Location
+    private lateinit var locationCallback: LocationCallback
+    private lateinit var locationRequest: LocationRequest
+
+    private var locationUpdateState = false
 
     companion object{
         private const val LOCATION_PERMISSION_REQUEST_CODE  = 1
+        private const val REQUEST_CHECK_SETTINGS  = 2
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,7 +55,25 @@ class MapsActivity : AppCompatActivity(),
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+        //estanciando essa variavl para usar esee comportamento descrito no seu corpo
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        locationCallback = object: LocationCallback() {
+            override fun onLocationResult(p0: LocationResult)
+                {
+                    super.onLocationResult(p0)
+
+                    lastLocation = p0.lastLocation
+
+                    placeMarkerOnMap(LatLng(lastLocation.latitude, lastLocation.longitude))
+                }
+        }
+
+        createLocationRequest()
+
+
+
+
 
     }
 
@@ -155,6 +179,76 @@ class MapsActivity : AppCompatActivity(),
 
         return address
 
+    }
+
+
+
+    private fun startLocationUpdates () {
+
+            if (ActivityCompat.checkSelfPermission(this,
+                    android.Manifest.permission.ACCESS_FINE_LOCATION)
+                !=PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions( this,
+            arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
+            LOCATION_PERMISSION_REQUEST_CODE)
+
+            return
+        }
+
+        //fica atualizando as variavies
+        //locationRequest e locationCallback
+        fusedLocationClient.requestLocationUpdates(locationRequest,locationCallback, null )
+
+    }
+
+    private fun createLocationRequest() {
+
+        locationRequest = LocationRequest()
+
+        locationRequest.interval = 10000
+        locationRequest.fastestInterval = 5000
+
+        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+
+        val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
+        //pra gente ter a localizacao
+        val client = LocationServices.getSettingsClient(this)
+
+        val task = client.checkLocationSettings (builder.build())
+
+                task.addOnSuccessListener {
+
+                    locationUpdateState = true
+
+                    startLocationUpdates()
+                }
+
+        task.addOnFailureListener { e ->
+             if (e is ResolvableApiException) {
+
+            try {
+
+                e.startResolutionForResult(this@MapsActivity, REQUEST_CHECK_SETTINGS)
+            } catch (sendEx: IntentSender.SendIntentException) {}
+        }
+
+        }
+
+    }
+    //se o usuario nao estiver usando nossa
+    //app a gente pde para nao ficar
+    //atualizando a localizacoa
+    //para nao gastar energia
+    override fun onPause() {
+        super.onPause()
+        fusedLocationClient.removeLocationUpdates(locationCallback)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if(!locationUpdateState){
+            startLocationUpdates()
+        }
     }
 
 

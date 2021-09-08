@@ -96,6 +96,7 @@ class MapsActivity : AppCompatActivity(),
                 lastLocation = location
                 //aqui pega localizacao
                 val currentLatLng = LatLng(location.latitude, location.longitude)
+                placeMarkerOnMap(currentLatLng)
                 //aqui direciona para a localizacao desejada
                 map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 12f))
 
@@ -103,9 +104,13 @@ class MapsActivity : AppCompatActivity(),
 
         }
 
+    }
 
-
-
+    //coloca o marcador vermelho que existe
+    //no googlz maps
+    private fun placeMarkerOnMap (location: LatLng) {
+        val markerOptions = MarkerOptions() .position (location)
+        map.addMarker (markerOptions)
     }
 
 
